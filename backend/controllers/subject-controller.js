@@ -1,6 +1,6 @@
-const Subject = require('../models/subject.js');
-const Teacher = require('../models/teacher.js');
-const Student = require('../models/student.js');
+const Subject = require('../models/subject.js'); // Sequelize Subject model
+const Teacher = require('../models/teacher.js'); // Sequelize Teacher model
+const Student = require('../models/student.js'); // Sequelize Student model
 
 const subjectCreate = async (req, res) => {
     try {
@@ -10,34 +10,41 @@ const subjectCreate = async (req, res) => {
             sessions: subject.sessions,
         }));
 
-        const existingSubjectBySubCode = await Subject.findOne({
-            'subjects.subCode': subjects[0].subCode,
-            school: req.body.adminID,
-        });
+        // Check if any subject with the same subCode already exists
+        for (const subject of subjects) {
+            const existingSubject = await Subject.findOne({
+                where: { subCode: subject.subCode },
+            });
 
-        if (existingSubjectBySubCode) {
-            res.send({ message: 'Sorry this subcode must be unique as it already exists' });
-        } else {
-            const newSubjects = subjects.map((subject) => ({
-                ...subject,
-                sclassName: req.body.sclassName,
-                school: req.body.adminID,
-            }));
-
-            const result = await Subject.insertMany(newSubjects);
-            res.send(result);
+            if (existingSubject) {
+                return res.status(400).json({
+                    message: `A subject with the code ${subject.subCode} already exists.`,
+                });
+            }
         }
-    } catch (err) {
-        res.status(500).json(err);
+
+        // Create new subjects
+        const newSubjects = await Subject.bulkCreate(subjects);
+
+        return res.status(201).json({
+            message: 'Subject(s) added successfully!',
+            data: newSubjects,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: 'An error occurred while adding the subject(s).',
+            error: error.message,
+        });
     }
 };
 
 const allSubjects = async (req, res) => {
     try {
-        let subjects = await Subject.find({ school: req.params.id })
-            .populate("sclassName", "sclassName")
+        let subjects = await Subject.find()
+            .populate("sclassName", "sclassName");
         if (subjects.length > 0) {
-            res.send(subjects)
+            res.send(subjects);
         } else {
             res.send({ message: "No subjects found" });
         }
@@ -48,9 +55,9 @@ const allSubjects = async (req, res) => {
 
 const classSubjects = async (req, res) => {
     try {
-        let subjects = await Subject.find({ sclassName: req.params.id })
+        let subjects = await Subject.find({ sclassName: req.params.id });
         if (subjects.length > 0) {
-            res.send(subjects)
+            res.send(subjects);
         } else {
             res.send({ message: "No subjects found" });
         }
@@ -76,17 +83,16 @@ const getSubjectDetail = async (req, res) => {
     try {
         let subject = await Subject.findById(req.params.id);
         if (subject) {
-            subject = await subject.populate("sclassName", "sclassName")
-            subject = await subject.populate("teacher", "name")
+            subject = await subject.populate("sclassName", "sclassName");
+            subject = await subject.populate("teacher", "name");
             res.send(subject);
-        }
-        else {
+        } else {
             res.send({ message: "No subject found" });
         }
     } catch (err) {
         res.status(500).json(err);
     }
-}
+};
 
 const deleteSubject = async (req, res) => {
     try {
@@ -95,7 +101,7 @@ const deleteSubject = async (req, res) => {
         // Set the teachSubject field to null in teachers
         await Teacher.updateOne(
             { teachSubject: deletedSubject._id },
-            { $unset: { teachSubject: "" }, $unset: { teachSubject: null } }
+            { $unset: { teachSubject: "" } }
         );
 
         // Remove the objects containing the deleted subject from students' examResult array
@@ -118,12 +124,12 @@ const deleteSubject = async (req, res) => {
 
 const deleteSubjects = async (req, res) => {
     try {
-        const deletedSubjects = await Subject.deleteMany({ school: req.params.id });
+        const deletedSubjects = await Subject.deleteMany();
 
         // Set the teachSubject field to null in teachers
         await Teacher.updateMany(
             { teachSubject: { $in: deletedSubjects.map(subject => subject._id) } },
-            { $unset: { teachSubject: "" }, $unset: { teachSubject: null } }
+            { $unset: { teachSubject: "" } }
         );
 
         // Set examResult and attendance to null in all students
@@ -145,7 +151,7 @@ const deleteSubjectsByClass = async (req, res) => {
         // Set the teachSubject field to null in teachers
         await Teacher.updateMany(
             { teachSubject: { $in: deletedSubjects.map(subject => subject._id) } },
-            { $unset: { teachSubject: "" }, $unset: { teachSubject: null } }
+            { $unset: { teachSubject: "" } }
         );
 
         // Set examResult and attendance to null in all students
@@ -160,5 +166,13 @@ const deleteSubjectsByClass = async (req, res) => {
     }
 };
 
-
-module.exports = { subjectCreate, freeSubjectList, classSubjects, getSubjectDetail, deleteSubjectsByClass, deleteSubjects, deleteSubject, allSubjects };
+module.exports = {
+    subjectCreate,
+    freeSubjectList,
+    classSubjects,
+    getSubjectDetail,
+    deleteSubjectsByClass,
+    deleteSubjects,
+    deleteSubject,
+    allSubjects,
+};
