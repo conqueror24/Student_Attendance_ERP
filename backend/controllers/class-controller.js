@@ -6,30 +6,36 @@ const Teacher = require('../models/teacher.js');
 // Create a new class
 const sclassCreate = async (req, res) => {
     try {
-        const { sclassName, adminID } = req.body;
-
-        // Check if the class already exists
-        const existingSclass = await Sclass.findOne({
-            sclassName,
-            school: adminID
-        });
-
-        if (existingSclass) {
-            return res.status(400).send({ message: 'Sorry, this class name already exists' });
-        }
-
-        // Create and save the new class
-        const sclass = new Sclass({
-            sclassName,
-            school: adminID
-        });
-        const result = await sclass.save();
-        res.status(201).send(result);
-
+      const { sclassName } = req.body;
+    //   console.log("Body", req.body);
+  
+      // Check if the class already exists
+      const existingSclass = await Sclass.findOne({
+        where: { sclassName: sclassName }
+      });
+      console.log("Check existing classes", existingSclass);
+  
+      if (existingSclass) {
+        return res
+          .status(400)
+          .send({ message: "Sorry, this class name already exists" });
+      }
+  
+      // Create and save the new class
+      const sclass = new Sclass({
+        sclassName
+      });
+      const result = await sclass.save();
+      console.log("Result", result);
+  
+      res.status(201).send(result);
     } catch (err) {
-        res.status(500).json({ message: 'An error occurred while creating the class', error: err });
+      res.status(500).json({
+        message: "An error occurred while creating the class",
+        error: err
+      });
     }
-};
+  };
 
 // List all classes for a school
 const sclassList = async (req, res) => {

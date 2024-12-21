@@ -6,6 +6,7 @@ const sequelize = new Sequelize({
     username: 'root', // Use your MySQL username
     password: '12345', // Use your MySQL password
     database: 'school_db', // The database name
+    port:3308
 });
 
 module.exports = sequelize;
