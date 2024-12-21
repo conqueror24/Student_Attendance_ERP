@@ -104,6 +104,7 @@ router.get("/Sclass/Students/:id", getSclassStudents)
 router.delete("/Sclasses/:id", deleteSclasses)
 router.delete("/Sclass/:id", deleteSclass)
 
+
 // Subject
 
 router.post('/SubjectCreate', subjectCreate);

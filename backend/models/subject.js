@@ -15,6 +15,7 @@ const Subject = sequelize.define('Subject', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    
 });
 
 // Define relationships

@@ -10,7 +10,6 @@ const subjectCreate = async (req, res) => {
             sessions: subject.sessions,
         }));
 
-        // Check if any subject with the same subCode already exists
         for (const subject of subjects) {
             const existingSubject = await Subject.findOne({
                 where: { subCode: subject.subCode },
@@ -23,7 +22,6 @@ const subjectCreate = async (req, res) => {
             }
         }
 
-        // Create new subjects
         const newSubjects = await Subject.bulkCreate(subjects);
 
         return res.status(201).json({
@@ -31,7 +29,7 @@ const subjectCreate = async (req, res) => {
             data: newSubjects,
         });
     } catch (error) {
-        console.error(error);
+        console.error('Error adding subjects:', error);
         return res.status(500).json({
             message: 'An error occurred while adding the subject(s).',
             error: error.message,
@@ -41,128 +39,146 @@ const subjectCreate = async (req, res) => {
 
 const allSubjects = async (req, res) => {
     try {
-        let subjects = await Subject.find()
-            .populate("sclassName", "sclassName");
+        console.log("Fetching all subjects from the database...");
+        const subjects = await Subject.findAll();
+        console.log('Fetched subjects:', subjects);
+
         if (subjects.length > 0) {
-            res.send(subjects);
+            console.log("Subjects found, sending response...");
+            return res.status(200).json(subjects);
         } else {
-            res.send({ message: "No subjects found" });
+            console.log("No subjects found.");
+            return res.status(404).json({ message: 'No subjects found' });
         }
     } catch (err) {
-        res.status(500).json(err);
+        console.error("Error occurred while fetching subjects:", err);
+        return res.status(500).json({
+            message: 'An error occurred while fetching the subjects.',
+            error: err.message,
+        });
     }
 };
 
 const classSubjects = async (req, res) => {
     try {
-        let subjects = await Subject.find({ sclassName: req.params.id });
+        console.log(`Fetching subjects for class ID: ${req.params.id}`);
+        const subjects = await Subject.findAll({
+            where: { sclassId: req.params.id },
+        });
+
         if (subjects.length > 0) {
-            res.send(subjects);
+            console.log(`Found ${subjects.length} subjects for class ID: ${req.params.id}`);
+            return res.status(200).json(subjects);
         } else {
-            res.send({ message: "No subjects found" });
+            console.log(`No subjects found for class ID: ${req.params.id}`);
+            return res.status(404).json({ message: "No subjects found" });
         }
     } catch (err) {
-        res.status(500).json(err);
+        console.error("Error fetching subjects:", err);
+        return res.status(500).json({ error: "An error occurred while fetching subjects for the class." });
     }
 };
 
 const freeSubjectList = async (req, res) => {
     try {
-        let subjects = await Subject.find({ sclassName: req.params.id, teacher: { $exists: false } });
+        console.log(`Fetching free subjects for class ID: ${req.params.id}`);
+        const subjects = await Subject.findAll({
+            where: {
+                sclassId: req.params.id,
+                teacherId: null,
+            },
+        });
+
         if (subjects.length > 0) {
-            res.send(subjects);
+            console.log(`Found ${subjects.length} free subjects for class ID: ${req.params.id}`);
+            return res.status(200).json(subjects);
         } else {
-            res.send({ message: "No subjects found" });
+            console.log(`No free subjects found for class ID: ${req.params.id}`);
+            return res.status(404).json({ message: "No subjects found without assigned teachers." });
         }
     } catch (err) {
-        res.status(500).json(err);
+        console.error("Error fetching free subjects:", err);
+        return res.status(500).json({ error: "An error occurred while fetching free subjects." });
     }
 };
 
 const getSubjectDetail = async (req, res) => {
     try {
-        let subject = await Subject.findById(req.params.id);
+        console.log(`Fetching details for subject ID: ${req.params.id}`);
+        const subject = await Subject.findByPk(req.params.id, {
+            include: [
+                {
+                    model: require('../models/sclass.js'), // Replace with your class model
+                    attributes: ['sclassName'],
+                },
+                {
+                    model: Teacher,
+                    attributes: ['name'],
+                },
+            ],
+        });
+
         if (subject) {
-            subject = await subject.populate("sclassName", "sclassName");
-            subject = await subject.populate("teacher", "name");
-            res.send(subject);
+            console.log(`Found subject details for ID: ${req.params.id}`);
+            return res.status(200).json(subject);
         } else {
-            res.send({ message: "No subject found" });
+            console.log(`No subject found for ID: ${req.params.id}`);
+            return res.status(404).json({ message: "No subject found" });
         }
     } catch (err) {
-        res.status(500).json(err);
+        console.error("Error fetching subject details:", err);
+        return res.status(500).json({ error: "An error occurred while fetching the subject details." });
     }
 };
 
 const deleteSubject = async (req, res) => {
     try {
-        const deletedSubject = await Subject.findByIdAndDelete(req.params.id);
+        console.log(`Deleting subject with ID: ${req.params.id}`);
+        const subject = await Subject.findByPk(req.params.id);
 
-        // Set the teachSubject field to null in teachers
-        await Teacher.updateOne(
-            { teachSubject: deletedSubject._id },
-            { $unset: { teachSubject: "" } }
-        );
+        if (!subject) {
+            return res.status(404).json({ message: "Subject not found" });
+        }
 
-        // Remove the objects containing the deleted subject from students' examResult array
-        await Student.updateMany(
-            {},
-            { $pull: { examResult: { subName: deletedSubject._id } } }
-        );
-
-        // Remove the objects containing the deleted subject from students' attendance array
-        await Student.updateMany(
-            {},
-            { $pull: { attendance: { subName: deletedSubject._id } } }
-        );
-
-        res.send(deletedSubject);
+        await subject.destroy();
+        console.log("Subject deleted:", subject);
+        return res.status(200).json({ message: "Subject deleted successfully" });
     } catch (error) {
-        res.status(500).json(error);
+        console.error("Error deleting subject:", error);
+        return res.status(500).json({
+            message: 'An error occurred while deleting the subject.',
+            error: error.message,
+        });
     }
 };
 
 const deleteSubjects = async (req, res) => {
     try {
-        const deletedSubjects = await Subject.deleteMany();
-
-        // Set the teachSubject field to null in teachers
-        await Teacher.updateMany(
-            { teachSubject: { $in: deletedSubjects.map(subject => subject._id) } },
-            { $unset: { teachSubject: "" } }
-        );
-
-        // Set examResult and attendance to null in all students
-        await Student.updateMany(
-            {},
-            { $set: { examResult: null, attendance: null } }
-        );
-
-        res.send(deletedSubjects);
+        console.log("Deleting all subjects...");
+        const deletedCount = await Subject.destroy({ where: {}, truncate: true });
+        console.log(`Deleted ${deletedCount} subjects.`);
+        return res.status(200).json({ message: "All subjects deleted successfully" });
     } catch (error) {
-        res.status(500).json(error);
+        console.error("Error deleting all subjects:", error);
+        return res.status(500).json({
+            message: 'An error occurred while deleting all subjects.',
+            error: error.message,
+        });
     }
 };
 
 const deleteSubjectsByClass = async (req, res) => {
     try {
-        const deletedSubjects = await Subject.deleteMany({ sclassName: req.params.id });
-
-        // Set the teachSubject field to null in teachers
-        await Teacher.updateMany(
-            { teachSubject: { $in: deletedSubjects.map(subject => subject._id) } },
-            { $unset: { teachSubject: "" } }
-        );
-
-        // Set examResult and attendance to null in all students
-        await Student.updateMany(
-            {},
-            { $set: { examResult: null, attendance: null } }
-        );
-
-        res.send(deletedSubjects);
+        console.log(`Deleting subjects for class ID: ${req.params.id}`);
+        const deletedCount = await Subject.destroy({ where: { sclassId: req.params.id } });
+        console.log(`Deleted ${deletedCount} subjects for class ID: ${req.params.id}`);
+        return res.status(200).json({ message: "Subjects deleted successfully for the class" });
     } catch (error) {
-        res.status(500).json(error);
+        console.error("Error deleting subjects by class:", error);
+        return res.status(500).json({
+            message: 'An error occurred while deleting subjects by class.',
+            error: error.message,
+        });
     }
 };
 

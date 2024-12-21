@@ -19,11 +19,15 @@ const Student = sequelize.define('Student', {
         type: DataTypes.STRING,
         defaultValue: 'Student',
     },
+    class: {
+        type:DataTypes.STRING,
+        allowNull:false
+    }
 });
 
 // Define relationships
 Student.associate = (models) => {
-    Student.belongsTo(models.Admin, { foreignKey: 'school' });
+    // Student.belongsTo(models.Admin, { foreignKey: 'school' });
     Student.belongsTo(models.Sclass, { foreignKey: 'sclassName' });
     Student.hasMany(models.ExamResult, { foreignKey: 'studentId' });
     Student.hasMany(models.Attendance, { foreignKey: 'studentId' });

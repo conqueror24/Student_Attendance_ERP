@@ -26,6 +26,20 @@ export const getAllSclasses = (id, address) => async (dispatch) => {
         dispatch(getError(error));
     }
 }
+export const getSubjectList = (id, address) => async (dispatch) => {
+    dispatch(getRequest());
+
+    try {
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
+        if (result.data.message) {
+            dispatch(getFailed(result.data.message));
+        } else {
+            dispatch(getSubjectsSuccess(result.data));
+        }
+    } catch (error) {
+        dispatch(getError(error));
+    }
+}
 
 export const getClassStudents = (id) => async (dispatch) => {
     dispatch(getRequest());
@@ -55,20 +69,20 @@ export const getClassDetails = (id, address) => async (dispatch) => {
     }
 }
 
-export const getSubjectList = (id, address) => async (dispatch) => {
-    dispatch(getRequest());
+// export const getSubjectList = (id, address) => async (dispatch) => {
+//     dispatch(getRequest());
 
-    try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
-        if (result.data.message) {
-            dispatch(getFailed(result.data.message));
-        } else {
-            dispatch(getSubjectsSuccess(result.data));
-        }
-    } catch (error) {
-        dispatch(getError(error));
-    }
-}
+//     try {
+//         const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
+//         if (result.data.message) {
+//             dispatch(getFailed(result.data.message));
+//         } else {
+//             dispatch(getSubjectsSuccess(result.data));
+//         }
+//     } catch (error) {
+//         dispatch(getError(error));
+//     }
+// }
 
 export const getTeacherFreeClassSubjects = (id) => async (dispatch) => {
     dispatch(getRequest());
