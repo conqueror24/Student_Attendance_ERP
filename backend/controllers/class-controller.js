@@ -13,7 +13,7 @@ const sclassCreate = async (req, res) => {
       const existingSclass = await Sclass.findOne({
         where: { sclassName: sclassName }
       });
-      console.log("Check existing classes", existingSclass);
+    //   console.log("Check existing classes", existingSclass);
   
       if (existingSclass) {
         return res
@@ -34,22 +34,32 @@ const sclassCreate = async (req, res) => {
         message: "An error occurred while creating the class",
         error: err
       });
+      
     }
   };
 
 // List all classes for a school
 const sclassList = async (req, res) => {
     try {
-        const sclasses = await Sclass.find({ school: req.params.id });
+        const sclasses = await Sclass.findAll();
+        console.log("Classes fetched from the database:", sclasses);
+
         if (sclasses.length > 0) {
+            console.log("Classes found, sending response...");
             res.status(200).send(sclasses);
         } else {
+            console.log("No classes found.");
             res.status(404).send({ message: 'No classes found' });
         }
     } catch (err) {
-        res.status(500).json({ message: 'An error occurred while fetching the classes', error: err });
+        console.error("Error occurred while fetching classes:", err);
+        res.status(500).json({
+            message: 'An error occurred while fetching the classes',
+            error: err.message
+        });
     }
 };
+
 
 // Get details of a specific class
 const getSclassDetail = async (req, res) => {
