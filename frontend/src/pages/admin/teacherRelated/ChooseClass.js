@@ -45,7 +45,7 @@ const ChooseClass = ({ situation }) => {
         return (
             <>
                 <PurpleButton variant="contained"
-                    onClick={() => navigateHandler(row.id)}>
+                    onClick={() => navigateHandler(row.name)}>
                     Choose
                 </PurpleButton>
             </>

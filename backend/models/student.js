@@ -19,10 +19,10 @@ const Student = sequelize.define('Student', {
         type: DataTypes.STRING,
         defaultValue: 'Student',
     },
-    class: {
-        type:DataTypes.STRING,
-        allowNull:false
-    }
+    // class: {
+    //     type:DataTypes.STRING,
+    //     allowNull:false
+    // }
 });
 
 // Define relationships

@@ -6,6 +6,7 @@ const subjectCreate = async (req, res) => {
     try {
         const subjects = req.body.subjects.map((subject) => ({
             subName: subject.subName,
+            className: subject.sclassName,
             subCode: subject.subCode,
             sessions: subject.sessions,
         }));

@@ -55,6 +55,7 @@ const SubjectForm = () => {
     const fields = {
         sclassName,
         subjects: subjects.map((subject) => ({
+            sclassName:sclassName,
             subName: subject.subName,
             subCode: subject.subCode,
             sessions: subject.sessions,

@@ -15,6 +15,10 @@ const Subject = sequelize.define('Subject', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    className:{
+        type: DataTypes.STRING,
+        allowNull:false
+    }
     
 });
 

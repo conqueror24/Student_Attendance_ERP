@@ -52,7 +52,7 @@ const ShowSubjects = () => {
         return {
             subName: subject.subName,
             sessions: subject.sessions,
-            // sclassName: subject.sclassName,
+            sclassName: subject.className || '-',
             // sclassID: subject.sclassName._id,
             id: subject._id,
         };
